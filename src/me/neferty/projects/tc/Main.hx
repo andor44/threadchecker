@@ -75,7 +75,7 @@ class Main
 		return local_md5s;
 	}
 	
-	static function save_thread(local_md5s : List<String>) : List<String>
+	static function save_thread(local_md5s : List<String>, ignore_error : Bool = false) : List<String>
 	{
 		Lib.println("Fetching posts");
 		var thread : Dynamic = null;
@@ -85,8 +85,16 @@ class Main
 		}
 		catch (e : Dynamic)
 		{
-			Lib.println("Unable to fetch thread from 4chan, exiting");
-			Sys.exit(1);
+			Lib.print("Unable to fetch thread from 4chan");
+			if (!ignore_error)
+			{
+				Sys.exit(1);
+				Lib.println(", exiting...");
+			}
+			else
+			{
+				Lib.println(", moving on...");
+			}
 		}
 		
 		var new_md5s = new List<String>();
@@ -170,9 +178,12 @@ class Main
 			
 			Lib.print("Loop? "); conf.loop = Sys.stdin().readLine().toLowerCase() == 'y';
 			
-			do {
-				Lib.print("Loop interval (in seconds): "); conf.loop_freq = Std.parseInt(Sys.stdin().readLine());
-			} while (conf.loop_freq == null || conf.loop_freq == 0);
+			if (conf.loop)
+			{
+				do {
+					Lib.print("Loop interval (in seconds): "); conf.loop_freq = Std.parseInt(Sys.stdin().readLine());
+				} while (conf.loop_freq == null || conf.loop_freq == 0);
+			}
 			
 			Lib.println("Writing given config into '" + conf.board_name + "-" + conf.thread_id + ".json' then running it");
 			File.saveContent(conf.board_name + "-" + conf.thread_id + ".json", Json.stringify(conf));
@@ -188,7 +199,7 @@ class Main
 			Lib.println("Looping is on. Press Ctrl+C to exit or just close this window");
 			while (true)
 			{
-				local_md5s = local_md5s.concat(save_thread(local_md5s));
+				local_md5s = local_md5s.concat(save_thread(local_md5s, true));
 				Lib.println("Waiting " + conf.loop_freq + " seconds...");
 				Sys.sleep(conf.loop_freq);
 			}
